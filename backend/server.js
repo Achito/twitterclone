@@ -7,6 +7,8 @@ import authRoutes from "./routes/auth.routes.js"
 
 const app = express();
 
+app.use(express.json()); // to parse req.body
+
 dotenv.config();
 app.use("/api/auth", authRoutes);
 
