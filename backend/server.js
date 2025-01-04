@@ -4,10 +4,15 @@ import dotenv  from "dotenv";
 import connectMongoDB from "./db/dbConnectMongoDB.js";
 
 import authRoutes from "./routes/auth.routes.js"
+import cookieParser from "cookie-parser";
 
 const app = express();
 
 app.use(express.json()); // to parse req.body
+
+app.use(express.urlencoded({extended:true})); // to parse form data (POSTMAN API testing etc)
+
+app.use(cookieParser());
 
 dotenv.config();
 app.use("/api/auth", authRoutes);
