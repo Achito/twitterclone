@@ -114,6 +114,7 @@ export const logout = async (req, res) => {
 
 };
 
+// Get user info using JWT from req
 export const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id).select("-password");
