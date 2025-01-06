@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
+import {v2 as cloudinary} from "cloudinary";
 
 import User from "../models/user.model.js";
 import Notification from "../models/notification.model.js";
+
 
 // Get user -> router.get("/profile/:username", getUserProfile);
 export const getUserProfile = async (req, res) => {
@@ -101,3 +103,61 @@ export const getSuggestedUsers = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
+
+export const updateUserProfile = async (req, res) => {
+  try {
+    const { username, fullName, email, bio, link, profileImg, coverImg } = req.body;
+
+    const user = await User.findById(req.user._id);
+
+    if (!user) {
+      return res.status(400).json({ error: "User not found" });
+    }
+
+    if (username) user.username = username;
+    if (fullName) user.fullName = fullName;
+    if (email) user.email = email;
+    if (bio) user.bio = bio;
+    if (link) user.link = link;
+
+
+    if(profileImg) {
+
+      if(user.profileImg) {
+        
+        // Delete the previous image from Cloudinary
+        await cloudinary.uploader.destroy(user.profileImg.split("/").pop().split(".")[0]);
+      }
+
+      const uplodadedResponse = await cloudinary.uploader.upload(profileImg)
+      user.profileImg = uplodadedResponse.secure_url;
+
+      };
+
+      if(coverImg) {
+
+        if(user.coverImg) {
+        
+          // Delete the previous image from Cloudinary
+          await cloudinary.uploader.destroy(user.coverImg.split("/").pop().split(".")[0]);
+        }
+
+        const uplodadedResponse = await cloudinary.uploader.upload(coverImg)
+        user.coverImg = uplodadedResponse.secure_url;
+        };
+    
+
+    await user.save();
+    
+    // Remove password from the response
+    user.password = undefined;
+
+    res.status(200).json({ user: user, message: "Profile updated successfully" });
+
+  } catch (error) {
+    console.log("Error in updateUserProfile Controller", error.message);
+    res.status(500).json({ error: error.message });
+  }
+}
+
