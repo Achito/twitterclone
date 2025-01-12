@@ -3,10 +3,11 @@ import { v2 as cloudinary } from "cloudinary";
 
 import Post from "../models/post.model.js";
 import Notification from "../models/notification.model.js";
+import User from "../models/user.model.js";
 
 export const getPosts = async (req, res) => {
   try {
-   const postId = req.params.postId;
+    const postId = req.params.postId;
     if (postId) {
       const post = await Post.findById(postId);
       return res.status(200).json(post);
@@ -16,8 +17,9 @@ export const getPosts = async (req, res) => {
       .sort({ createdAt: -1 })
       .populate({
         path: "user",
-        select: "-password"
-      }).populate({path: "comments.userId", select: "-password"});
+        select: "-password",
+      })
+      .populate({ path: "comments.userId", select: "-password" });
 
     if (posts.length === 0) return res.status(200).json([]);
 
@@ -70,6 +72,7 @@ export const deletePost = async (req, res) => {
       return res.status(401).json({ error: "You can delete only your post" });
     }
 
+    // Check if post contains and image, then delete it from cloudinary
     if (post.img) {
       const imgId = post.img.split("/").pop().split(".")[0];
       await cloudinary.uploader.destroy(imgId);
@@ -121,13 +124,19 @@ export const likeUnlikePost = async (req, res) => {
       return res.status(404).json({ error: "Post not found" });
     }
 
+    // Check if the user already liked the post
     const userLikedPost = post.likes.includes(req.user._id);
 
+    // If already liked, then unlike the post
     if (userLikedPost) {
       //Unlike the post
       await Post.updateOne(
         { _id: req.params.postId },
         { $pull: { likes: req.user._id } }
+      );
+      await User.updateOne(
+        { _id: req.user._id },
+        { $pull: { likedPosts: req.params.postId } }
       );
 
       return res.status(200).json({ message: "Post unliked successfully" });
@@ -136,6 +145,11 @@ export const likeUnlikePost = async (req, res) => {
       await Post.updateOne(
         { _id: req.params.postId },
         { $push: { likes: req.user._id } }
+      );
+
+      await User.updateOne(
+        { _id: req.user._id },
+        { $push: { likedPosts: req.params.postId } }
       );
 
       const notification = new Notification({
@@ -150,5 +164,21 @@ export const likeUnlikePost = async (req, res) => {
   } catch (error) {
     console.log("Error in likeUnlikePost Controller", error.message);
     return res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+export const getFollowingPosts = async (req, res) => {
+
+  
+  try {
+    console.log(req.user.following);
+    const feedPosts = await Post.find({ user: { $in: req.user.following } })
+      .sort({ createdAt: -1 })
+      .populate({ path: "user", select: "-password" });
+
+      res.status(200).json(feedPosts);
+  } catch (error) {
+    console.log("Error in getFollowingPosts", error);
+    res.status(500).json({error: "Internal Server Error"});
   }
 };

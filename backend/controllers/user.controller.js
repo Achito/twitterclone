@@ -1,9 +1,9 @@
 import mongoose from "mongoose";
-import {v2 as cloudinary} from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 
 import User from "../models/user.model.js";
+import Post from "../models/post.model.js";
 import Notification from "../models/notification.model.js";
-
 
 // Get user -> router.get("/profile/:username", getUserProfile);
 export const getUserProfile = async (req, res) => {
@@ -89,25 +89,29 @@ export const getSuggestedUsers = async (req, res) => {
     const usersFollowedByMe = await User.findById(userId).select("following");
 
     // Select 10 users that doesn't include Current User itself (ne -> not equal)
-    const users = await User.aggregate([{ $match: { _id: { $ne: userId } } }, {$sample:{size:10}}, {$project: {password:0}}]);
+    const users = await User.aggregate([
+      { $match: { _id: { $ne: userId } } },
+      { $sample: { size: 10 } },
+      { $project: { password: 0 } },
+    ]);
 
     // From sample above (users) filter just to not include already followed users
-    const filteredUsers = users.filter((user) => !usersFollowedByMe.following.includes(user._id));
-    const suggestedUsers = filteredUsers.slice(0,4);
+    const filteredUsers = users.filter(
+      (user) => !usersFollowedByMe.following.includes(user._id)
+    );
+    const suggestedUsers = filteredUsers.slice(0, 4);
 
     res.status(200).json(suggestedUsers);
-
-
   } catch (error) {
     console.log("Error in suggestedUser Controller", error.message);
     res.status(500).json({ error: error.message });
   }
 };
 
-
 export const updateUserProfile = async (req, res) => {
   try {
-    const { username, fullName, email, bio, link, profileImg, coverImg } = req.body;
+    const { username, fullName, email, bio, link, profileImg, coverImg } =
+      req.body;
 
     const user = await User.findById(req.user._id);
 
@@ -121,43 +125,84 @@ export const updateUserProfile = async (req, res) => {
     if (bio) user.bio = bio;
     if (link) user.link = link;
 
-
-    if(profileImg) {
-
-      if(user.profileImg) {
-        
+    if (profileImg) {
+      if (user.profileImg) {
         // Delete the previous image from Cloudinary
-        await cloudinary.uploader.destroy(user.profileImg.split("/").pop().split(".")[0]);
+        await cloudinary.uploader.destroy(
+          user.profileImg.split("/").pop().split(".")[0]
+        );
       }
 
-      const uplodadedResponse = await cloudinary.uploader.upload(profileImg)
+      const uplodadedResponse = await cloudinary.uploader.upload(profileImg);
       user.profileImg = uplodadedResponse.secure_url;
+    }
 
-      };
+    if (coverImg) {
+      if (user.coverImg) {
+        // Delete the previous image from Cloudinary
+        await cloudinary.uploader.destroy(
+          user.coverImg.split("/").pop().split(".")[0]
+        );
+      }
 
-      if(coverImg) {
-
-        if(user.coverImg) {
-        
-          // Delete the previous image from Cloudinary
-          await cloudinary.uploader.destroy(user.coverImg.split("/").pop().split(".")[0]);
-        }
-
-        const uplodadedResponse = await cloudinary.uploader.upload(coverImg)
-        user.coverImg = uplodadedResponse.secure_url;
-        };
-    
+      const uplodadedResponse = await cloudinary.uploader.upload(coverImg);
+      user.coverImg = uplodadedResponse.secure_url;
+    }
 
     await user.save();
-    
+
     // Remove password from the response
     user.password = undefined;
 
-    res.status(200).json({ user: user, message: "Profile updated successfully" });
-
+    res
+      .status(200)
+      .json({ user: user, message: "Profile updated successfully" });
   } catch (error) {
     console.log("Error in updateUserProfile Controller", error.message);
     res.status(500).json({ error: error.message });
   }
-}
+};
 
+export const getLikedPosts = async (req, res) => {
+  try {
+    const { username } = req.params || "";
+
+    const user = awaitUser.findOne({ username: username });
+
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+    console.log(user);
+
+    const likedPosts = await Post.find({
+      _id: { $in: user.likedPosts },
+    })
+      .populate({ path: "user", select: "-password" })
+      .populate({ path: "comments.userId", select: "-password" });
+
+    res.status(200).json(likedPosts);
+  } catch (error) {
+    console.log("Error in getLikedPosts controller: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const getUserPosts = async (req, res) => {
+  try {
+    const user = await User.findOne({ username: req.params.username });
+    console.log(req.params.username);
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    const posts = await Post.find({ user: user._id })
+      .sort({ createdAt: -1 })
+      .populate({ path: "user", select: "-password" })
+      .populate({ path: "comments.userId", select: "-password" });
+
+    return res.status(200).json(posts);
+  } catch (error) {
+    console.log("Error in getUserPosts controller: ", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
