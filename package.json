@@ -9,7 +9,7 @@
   },
   "keywords": [],
   "author": "",
-  "type":"module",
+  "type": "module",
   "license": "ISC",
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -19,7 +19,9 @@
     "dotenv": "^16.4.7",
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
-    "moongose": "^1.0.0"
+    "moongose": "^1.0.0",
+    "react-icons": "^5.4.0",
+    "react-router-dom": "^7.1.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.9"
