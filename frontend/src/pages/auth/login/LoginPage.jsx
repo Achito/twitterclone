@@ -1,17 +1,20 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link,  } from "react-router-dom";
 import { MdOutlineMail } from "react-icons/md";
 import { RiLockPasswordLine } from "react-icons/ri";
 import XSvg from "../../../components/svgs/X.jsx";
 
-import { useMutation } from "@tanstack/react-query";
-import toast from "react-hot-toast";
+import { useMutation, useQueryClient} from "@tanstack/react-query";
+// import toast from "react-hot-toast";
 
 const LoginPage = () => {
+
   const [formData, setFormData] = useState({
     email: "",
     password: "",
   });
+
+  const queryClient = useQueryClient();
 
   const {
     mutate: loginMutation,
@@ -29,9 +32,10 @@ const LoginPage = () => {
           body: JSON.stringify({ email, password }),
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || "Failed to create account");
+        if (!res.ok) throw new Error(data.error || "Login failed");
         if (data.error) throw new Error(data.error);
         console.log(data);
+        
         return data;
       } catch (error) {
         console.log(error);
@@ -39,7 +43,9 @@ const LoginPage = () => {
       }
     },
     onSuccess: () => {
-      toast.success("User logged successfully");
+      // Invalide the authUser on App.js (Main) query to refetch the user (rerun) the function, so the user will be authenticated and redirected
+      queryClient.invalidateQueries({queryKey: ["authUser"]});
+  
     },
   });
 
