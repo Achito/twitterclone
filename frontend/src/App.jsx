@@ -16,7 +16,7 @@ import { useQuery } from "@tanstack/react-query";
 
 function App() {
   const { data: authUser, isLoading } = useQuery({
-    // quiery key is used to identify the query so you can use it to refetch the query on demand and other files
+    // query key is used to identify the query so you can use it to refetch the query on demand and other files
     queryKey: ["authUser"],
     queryFn: async () => {
       try {
@@ -25,14 +25,14 @@ function App() {
         // We return null so it will be easier to check if the user is authenticated or not, if it is undefined it would check as true therefore routing would not work
         if (data.error) return null;
         if (!res.ok) throw new Error(data.error || "Failed to fetch user");
-        console.log("authorized user:", data);
+        console.log("authUser is:", data);
        
         return data;
       } catch (error) {
         throw new Error(error);
       }
     },
-    retry: false,
+    retry: false, // Disable retries
   },);
 
   if (isLoading) {

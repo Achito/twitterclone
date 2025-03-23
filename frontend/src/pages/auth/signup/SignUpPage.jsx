@@ -17,7 +17,8 @@ const SignUpPage = () => {
     fullName: "",
     password: "",
   });
-
+  
+  // useMutation hook to handle the signup mutation, for POST requests that change something on the server  
   const { mutate, isError, isPending, error } = useMutation({
     // This is the formData passed on the handleSubmit function
     mutationFn: async ({ email, username, fullName, password }) => {

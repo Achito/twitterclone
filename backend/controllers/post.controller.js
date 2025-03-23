@@ -8,7 +8,8 @@ import User from "../models/user.model.js";
 export const getPosts = async (req, res) => {
   try {
     const postId = req.params.postId;
-    if (postId) {
+    if (postId && postId !=="all") {
+
       const post = await Post.findById(postId);
       return res.status(200).json(post);
     }

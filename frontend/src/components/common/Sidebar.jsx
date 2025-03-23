@@ -93,7 +93,8 @@ const Sidebar = () => {
                 <p className="text-slate-500 text-sm">@{authUser?.username}</p>
               </div>
               <BiLogOut className="w-5 h-5 cursor-pointer" onClick={(e) => {
-				e.preventDefault();
+				// Prevent the link from navigating when clicked because the icon is inside a link 
+        e.preventDefault();
 				logoutMutate();
 			  }}/>
             </div>
